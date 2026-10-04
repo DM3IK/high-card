@@ -16,6 +16,7 @@ public class GenericException extends Exception {
     private static final int GENERIC_ERROR_CODE = 500;
     private static final String GENERIC_ERROR_MESSAGE = "Generic error";
 
+    /** Outcome of the failed operation, owned by this exception instance. */
     private final StatusDTO status;
 
     /**

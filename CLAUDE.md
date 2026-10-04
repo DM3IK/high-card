@@ -57,9 +57,11 @@ Both endpoints are mapped under `/user/v1/user`:
 - Lombok `@Getter`/`@Setter` is used on DTOs, requests, responses and criteria. `@Slf4j` is used for logging.
 - Methods name their return variable `returnValue`.
 - No inline comments in production code: code must be self-explanatory; Javadoc only.
+- Javadoc on classes, public methods and relevant fields.
 - Every feature or bug fix comes with unit tests that cover at least:
   - (a) the positive case;
   - (b) edge cases: null, empty or whitespace-only strings, boundary values;
   - (c) the error or regression case.
 
   The number of tests follows the logic under test: do not add tests that verify nothing new.
+- Every bug fix is verified by temporarily reintroducing the bug and checking that the new tests fail, then restoring the fix.
