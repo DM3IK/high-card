@@ -8,9 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-/**
- * Unit tests for {@link UserAssembler}.
- */
 class UserAssemblerTest {
 
     private final UserAssembler assembler = new UserAssembler();

@@ -56,6 +56,7 @@ Both endpoints are mapped under `/user/v1/user`:
 - Dependencies are injected with field `@Autowired`.
 - Lombok `@Getter`/`@Setter` is used on DTOs, requests, responses and criteria. `@Slf4j` is used for logging.
 - Methods name their return variable `returnValue`.
+- No inline comments in production code: code must be self-explanatory; Javadoc only.
 - Every feature or bug fix comes with unit tests that cover at least:
   - (a) the positive case;
   - (b) edge cases: null, empty or whitespace-only strings, boundary values;

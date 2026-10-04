@@ -6,7 +6,7 @@ _To be completed_
 
 ## Difficulties encountered
 
-_To be completed_
+- **Correct, tested code with a design flaw that the tests could not catch.** In the catch block for unexpected errors in `UserServiceImpl.addUser`, Claude Code logged the error first and created the generic `GenericException` afterwards. The trace id returned to the client was therefore never written to the log. If a user reported "I got an error with traceId abc-123", nobody could find it on the server. The code compiled and all tests passed, because no test checked the log. The flaw came up while reviewing the diff, where I used Claude (chat) as a second reviewer of Claude Code's output. I evaluated the point, agreed it was a real gap and asked Claude Code to reverse the order: create the exception first, then log it with its trace id. I also asked to update the tests where needed; Claude Code extended the existing test to check the log content. The test now captures the log output and checks that it contains the same trace id the client receives. Lesson: green tests only cover what they assert; reviewing the design is still a human job.
 
 ## Approaches adopted
 
