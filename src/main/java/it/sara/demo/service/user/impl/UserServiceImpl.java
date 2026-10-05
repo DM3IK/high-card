@@ -24,13 +24,14 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     /**
-     * Validates the criteria and stores a new user, with the email trimmed and the phone number
-     * in the normalized {@code +39} format.
+     * Validates the criteria and stores a new user, with names and email trimmed and the phone number
+     * in the normalized {@code +39} format. Every field is checked against a whitelist, so input that could
+     * be used for injection attacks is rejected before reaching storage.
      *
      * @param criteria the data of the user to create
      * @return the result of the operation
      * @throws GenericException with code 400 if a required field is null or blank,
-     *                          if the email is not valid or the phone number is not a valid Italian number,
+     *                          if a name, the email or the phone number is not valid,
      *                          with code 500 and a specific message if the repository does not save the user,
      *                          or a {@link GenericException#genericError(Throwable) generic error}
      *                          that keeps the original cause for any unexpected failure
@@ -57,14 +58,18 @@ public class UserServiceImpl implements UserService {
             if (stringUtil.isNullOrBlank(criteria.getPhoneNumber())) {
                 throw new GenericException(400, "Phone is required");
             }
+            String firstName = userValidator.normalizeName(criteria.getFirstName())
+                    .orElseThrow(() -> new GenericException(400, "Invalid first name"));
+            String lastName = userValidator.normalizeName(criteria.getLastName())
+                    .orElseThrow(() -> new GenericException(400, "Invalid last name"));
             String email = userValidator.normalizeEmail(criteria.getEmail())
                     .orElseThrow(() -> new GenericException(400, "Invalid email"));
             String phoneNumber = userValidator.normalizePhoneNumber(criteria.getPhoneNumber())
                     .orElseThrow(() -> new GenericException(400, "Invalid phone number"));
 
             user = new User();
-            user.setFirstName(criteria.getFirstName());
-            user.setLastName(criteria.getLastName());
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
             user.setEmail(email);
             user.setPhoneNumber(phoneNumber);
 

@@ -104,22 +104,31 @@ class UserServiceImplTest {
     }
 
     @Test
-    void addUser_withSpacesAroundEmail_savesItTrimmed() throws GenericException {
+    void addUser_withSpacesAroundNamesAndEmail_savesThemTrimmed() throws GenericException {
         when(userRepository.save(any(User.class))).thenReturn(true);
         CriteriaAddUser criteria = validCriteria();
+        criteria.setFirstName(" Mario ");
+        criteria.setLastName(" Rossi ");
         criteria.setEmail(" mario.rossi@example.com ");
 
         userService.addUser(criteria);
 
         ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(saved.capture());
-        assertEquals("mario.rossi@example.com", saved.getValue().getEmail());
+        assertAll(
+                () -> assertEquals("Mario", saved.getValue().getFirstName()),
+                () -> assertEquals("Rossi", saved.getValue().getLastName()),
+                () -> assertEquals("mario.rossi@example.com", saved.getValue().getEmail())
+        );
     }
 
+    /**
+     * Regression: names accepted any text, including SQL injection payloads.
+     */
     @ParameterizedTest(name = "{1}")
     @MethodSource("invalidFormats")
-    void addUser_withInvalidEmailOrPhoneNumber_throws400WithFieldMessage(Consumer<CriteriaAddUser> setInvalidValue,
-                                                                          String expectedMessage) {
+    void addUser_withInvalidOrInjectionInput_throws400WithFieldMessage(Consumer<CriteriaAddUser> setInvalidValue,
+                                                                        String expectedMessage) {
         CriteriaAddUser criteria = validCriteria();
         setInvalidValue.accept(criteria);
 
@@ -134,6 +143,9 @@ class UserServiceImplTest {
 
     static Stream<Arguments> invalidFormats() {
         return Stream.of(
+                Arguments.of((Consumer<CriteriaAddUser>) c -> c.setFirstName("Robert'); DROP TABLE users;--"),
+                        "Invalid first name"),
+                Arguments.of((Consumer<CriteriaAddUser>) c -> c.setLastName("' OR '1'='1"), "Invalid last name"),
                 Arguments.of((Consumer<CriteriaAddUser>) c -> c.setEmail("mario.rossi"), "Invalid email"),
                 Arguments.of((Consumer<CriteriaAddUser>) c -> c.setPhoneNumber("+44 333 1234567"), "Invalid phone number")
         );

@@ -2,14 +2,25 @@ package it.sara.demo.service.user.validator;
 
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * Format rules for user data: email addresses and Italian phone numbers.
+ * Format rules for user data: names, email addresses and Italian phone numbers.
+ * The rules are whitelists, so characters used in injection attacks (quotes in unexpected positions,
+ * {@code ;}, {@code --}, {@code /*}, {@code =}, brackets) are rejected before the data reaches storage.
  */
 @Component
 public class UserValidator {
+
+    private static final int NAME_MAX_LENGTH = 50;
+
+    /**
+     * Words made of letters of any alphabet, accented letters included, joined by a single space,
+     * hyphen or apostrophe (e.g. "De Luca", "Anna-Maria", "D'Angelo").
+     */
+    private static final Pattern NAME = Pattern.compile("^\\p{L}+(?:[ '-]\\p{L}+)*$");
 
     private static final int EMAIL_MAX_LENGTH = 254;
     private static final int EMAIL_LOCAL_PART_MAX_LENGTH = 64;
@@ -31,6 +42,25 @@ public class UserValidator {
 
     private static final String ITALIAN_PREFIX = "+39";
     private static final String ITALIAN_PREFIX_WITH_ZEROS = "0039";
+
+    /**
+     * Removes leading and trailing spaces from a first or last name, then checks it against the name whitelist
+     * and the maximum length of 50 characters. Accented letters are converted to their composed Unicode form,
+     * so the same name is always stored the same way.
+     *
+     * @param name the name to check
+     * @return the trimmed name, or an empty optional if the name is not valid
+     */
+    public Optional<String> normalizeName(String name) {
+        if (name == null) {
+            return Optional.empty();
+        }
+        String trimmed = Normalizer.normalize(name.trim(), Normalizer.Form.NFC);
+        if (trimmed.length() > NAME_MAX_LENGTH || !NAME.matcher(trimmed).matches()) {
+            return Optional.empty();
+        }
+        return Optional.of(trimmed);
+    }
 
     /**
      * Removes leading and trailing spaces from an email address, then checks that it is well formed

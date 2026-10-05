@@ -18,6 +18,63 @@ class UserValidatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "Mario",
+            "De Luca",
+            "Anna-Maria",
+            "D'Angelo",
+            "Dell'Orto",
+            "Niccolò",
+            "José",
+            "Łukasz",
+            "Maria Assunta Concetta"
+    })
+    void normalizeName_withValidName_returnsItUnchanged(String name) {
+        assertEquals(Optional.of(name), validator.normalizeName(name));
+    }
+
+    @Test
+    void normalizeName_withSurroundingSpacesOrDecomposedAccent_returnsTrimmedComposedName() {
+        assertAll(
+                () -> assertEquals(Optional.of("Mario"), validator.normalizeName("  Mario  ")),
+                () -> assertEquals(Optional.of("Niccolò"), validator.normalizeName("Niccolò"))
+        );
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {
+            "   ",
+            "Robert'); DROP TABLE users;--",
+            "' OR '1'='1",
+            "1=1",
+            "Mario;",
+            "Mario--",
+            "Mario/*",
+            "<script>",
+            "\"Mario\"",
+            "Mario2",
+            "Mario_Rossi",
+            "O''Brien",
+            "'Mario",
+            "Mario'",
+            "-Mario",
+            "Mario  Rossi",
+            "Mario\tRossi"
+    })
+    void normalizeName_withInvalidOrInjectionInput_returnsEmpty(String name) {
+        assertTrue(validator.normalizeName(name).isEmpty());
+    }
+
+    @Test
+    void normalizeName_atLengthLimit_acceptsFiftyCharactersAndRejectsFiftyOne() {
+        assertAll(
+                () -> assertEquals(Optional.of("a".repeat(50)), validator.normalizeName("a".repeat(50))),
+                () -> assertTrue(validator.normalizeName("a".repeat(51)).isEmpty())
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
             "mario.rossi@example.com",
             "mario+news@example.it",
             "m_rossi-2@mail.example.co.uk",
