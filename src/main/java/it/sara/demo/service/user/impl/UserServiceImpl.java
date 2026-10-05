@@ -10,10 +10,8 @@ import it.sara.demo.service.user.result.AddUserResult;
 import it.sara.demo.service.user.result.GetUsersResult;
 import it.sara.demo.service.util.StringUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -68,9 +66,7 @@ public class UserServiceImpl implements UserService {
         } catch (GenericException e) {
             throw e;
         } catch (Exception e) {
-            GenericException error = GenericException.genericError(e);
-            log.error("Unexpected error [traceId={}]", error.getStatus().getTraceId(), e);
-            throw error;
+            throw GenericException.genericError(e);
         }
         return returnValue;
     }

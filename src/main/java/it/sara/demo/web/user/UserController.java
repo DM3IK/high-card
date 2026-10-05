@@ -7,6 +7,7 @@ import it.sara.demo.web.assembler.AddUserAssembler;
 import it.sara.demo.web.response.GenericResponse;
 import it.sara.demo.web.user.request.AddUserRequest;
 import it.sara.demo.web.user.request.GetUsersRequest;
+import it.sara.demo.web.user.response.AddUserResponse;
 import it.sara.demo.web.user.response.GetUsersResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST endpoints for users. Errors are turned into responses by
+ * {@link it.sara.demo.web.handler.GlobalExceptionHandler}, always with HTTP status 200.
+ */
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -24,11 +29,20 @@ public class UserController {
 
     private final AddUserAssembler addUserAssembler;
 
+    /**
+     * Creates a new user.
+     *
+     * @param request the user data
+     * @return a response with code 200 and the message "User added."
+     * @throws GenericException if the data is invalid or the user cannot be saved
+     */
     @RequestMapping(value = {"/v1/user"}, method = RequestMethod.PUT)
-    public ResponseEntity<GenericResponse> addUser(@RequestBody AddUserRequest request) throws GenericException {
+    public ResponseEntity<AddUserResponse> addUser(@RequestBody AddUserRequest request) throws GenericException {
         CriteriaAddUser criteria = addUserAssembler.toCriteria(request);
         userService.addUser(criteria);
-        return ResponseEntity.ok(GenericResponse.success("User added."));
+        AddUserResponse returnValue = new AddUserResponse();
+        returnValue.setStatus(GenericResponse.successStatus("User added."));
+        return ResponseEntity.ok(returnValue);
     }
 
     @RequestMapping(value = {"/v1/user"}, method = RequestMethod.POST)

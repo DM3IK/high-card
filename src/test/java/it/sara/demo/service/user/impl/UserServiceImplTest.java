@@ -17,8 +17,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -28,13 +26,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock
@@ -121,12 +118,8 @@ class UserServiceImplTest {
         );
     }
 
-    /**
-     * The trace id returned to the client must also be in the log, so that a reported error
-     * can be found on the server side.
-     */
     @Test
-    void addUser_whenRepositoryFailsUnexpectedly_throwsGenericErrorKeepingCauseAndLogsTraceId(CapturedOutput output) {
+    void addUser_whenRepositoryFailsUnexpectedly_throwsGenericErrorKeepingCause() {
         RuntimeException failure = new IllegalStateException("database connection lost");
         when(userRepository.save(any(User.class))).thenThrow(failure);
 
@@ -136,9 +129,7 @@ class UserServiceImplTest {
                 () -> assertEquals(500, exception.getStatus().getCode()),
                 () -> assertEquals("Generic error", exception.getStatus().getMessage()),
                 () -> assertNotNull(exception.getStatus().getTraceId()),
-                () -> assertSame(failure, exception.getCause()),
-                () -> assertTrue(output.getAll().contains("traceId=" + exception.getStatus().getTraceId())),
-                () -> assertTrue(output.getAll().contains("database connection lost"))
+                () -> assertSame(failure, exception.getCause())
         );
     }
 

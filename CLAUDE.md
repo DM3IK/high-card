@@ -44,8 +44,10 @@ Request → `UserController` → web assembler → `Criteria*` → `UserService`
 
 **Errors**
 - Services throw `GenericException`, a checked exception that carries a `StatusDTO` (`code`, `message`, `traceId`).
-- `GenericResponse.success(msg)` builds the success status.
-- Centralized exception handling does **not** exist yet (README task 4). When added, it must map exceptions to a `GenericResponse` with the right `StatusDTO`, always with HTTP status 200.
+- `GenericResponse.success(msg)` / `successStatus(msg)` build the success status; `GenericResponse.error(status)` builds an error response.
+- `web/handler/GlobalExceptionHandler` (`@RestControllerAdvice`) is the single place that turns exceptions into a `GenericResponse`, always with HTTP status 200. It handles `GenericException`, malformed body (400), unsupported method (405) and media type (415), unknown path (404), and any other exception as a generic 500 that hides internal details.
+- Request errors are logged **only** in the handler: 5xx at ERROR with trace id and stack trace, 4xx at WARN with trace id and message. Services create exceptions (keeping the cause) but do not log them.
+- Spring Security errors (401/403) are raised in filters before the controllers, so the handler does not see them; they need their own handlers with the same response format.
 
 **Endpoints**
 Both endpoints are mapped under `/user/v1/user`:
