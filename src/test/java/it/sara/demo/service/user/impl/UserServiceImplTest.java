@@ -5,6 +5,7 @@ import it.sara.demo.service.database.UserRepository;
 import it.sara.demo.service.database.model.User;
 import it.sara.demo.service.user.criteria.CriteriaAddUser;
 import it.sara.demo.service.user.result.AddUserResult;
+import it.sara.demo.service.user.validator.UserValidator;
 import it.sara.demo.service.util.StringUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class UserServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(new StringUtil(), userRepository);
+        userService = new UserServiceImpl(new StringUtil(), new UserValidator(), userRepository);
     }
 
     @Test
@@ -86,6 +87,55 @@ class UserServiceImplTest {
                 Arguments.of((Consumer<CriteriaAddUser>) c -> c.setLastName(null), "Last name is required"),
                 Arguments.of((Consumer<CriteriaAddUser>) c -> c.setEmail(null), "Email is required"),
                 Arguments.of((Consumer<CriteriaAddUser>) c -> c.setPhoneNumber(null), "Phone is required")
+        );
+    }
+
+    @Test
+    void addUser_withFormattedPhoneNumber_savesItNormalized() throws GenericException {
+        when(userRepository.save(any(User.class))).thenReturn(true);
+        CriteriaAddUser criteria = validCriteria();
+        criteria.setPhoneNumber("0039 333-123-4567");
+
+        userService.addUser(criteria);
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        assertEquals("+393331234567", saved.getValue().getPhoneNumber());
+    }
+
+    @Test
+    void addUser_withSpacesAroundEmail_savesItTrimmed() throws GenericException {
+        when(userRepository.save(any(User.class))).thenReturn(true);
+        CriteriaAddUser criteria = validCriteria();
+        criteria.setEmail(" mario.rossi@example.com ");
+
+        userService.addUser(criteria);
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        assertEquals("mario.rossi@example.com", saved.getValue().getEmail());
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("invalidFormats")
+    void addUser_withInvalidEmailOrPhoneNumber_throws400WithFieldMessage(Consumer<CriteriaAddUser> setInvalidValue,
+                                                                          String expectedMessage) {
+        CriteriaAddUser criteria = validCriteria();
+        setInvalidValue.accept(criteria);
+
+        GenericException exception = assertThrows(GenericException.class, () -> userService.addUser(criteria));
+
+        assertAll(
+                () -> assertEquals(400, exception.getStatus().getCode()),
+                () -> assertEquals(expectedMessage, exception.getStatus().getMessage())
+        );
+        verify(userRepository, never()).save(any());
+    }
+
+    static Stream<Arguments> invalidFormats() {
+        return Stream.of(
+                Arguments.of((Consumer<CriteriaAddUser>) c -> c.setEmail("mario.rossi"), "Invalid email"),
+                Arguments.of((Consumer<CriteriaAddUser>) c -> c.setPhoneNumber("+44 333 1234567"), "Invalid phone number")
         );
     }
 
