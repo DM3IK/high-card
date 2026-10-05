@@ -8,7 +8,7 @@ import it.sara.demo.web.response.GenericResponse;
 import it.sara.demo.web.user.request.AddUserRequest;
 import it.sara.demo.web.user.request.GetUsersRequest;
 import it.sara.demo.web.user.response.GetUsersResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,13 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private AddUserAssembler addUserAssembler;
+    private final AddUserAssembler addUserAssembler;
 
     @RequestMapping(value = {"/v1/user"}, method = RequestMethod.PUT)
     public ResponseEntity<GenericResponse> addUser(@RequestBody AddUserRequest request) throws GenericException {

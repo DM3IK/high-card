@@ -53,7 +53,7 @@ Both endpoints are mapped under `/user/v1/user`:
 - `POST` lists or searches users. `CriteriaGetUsers` has `query`, `offset`, `limit` and an `OrderType` enum.
 
 ## Conventions
-- Dependencies are injected with field `@Autowired`.
+- Dependencies are injected through the constructor: `private final` fields with Lombok `@RequiredArgsConstructor`.
 - Lombok `@Getter`/`@Setter` is used on DTOs, requests, responses and criteria. `@Slf4j` is used for logging.
 - Methods name their return variable `returnValue`.
 - No inline comments in production code: code must be self-explanatory; Javadoc only.

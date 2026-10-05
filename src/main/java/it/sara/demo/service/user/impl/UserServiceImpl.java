@@ -9,19 +9,18 @@ import it.sara.demo.service.user.criteria.CriteriaGetUsers;
 import it.sara.demo.service.user.result.AddUserResult;
 import it.sara.demo.service.user.result.GetUsersResult;
 import it.sara.demo.service.util.StringUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private StringUtil stringUtil;
+    private final StringUtil stringUtil;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     /**
      * Validates the criteria and stores a new user.
