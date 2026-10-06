@@ -31,6 +31,10 @@ Before touching the code, Claude Code produced a list of 11 bugs with file, desc
   - I asked to log unexpected errors with the same trace id returned to the client (see `report.md`).
   - I questioned Javadoc that only restated names. As a result, the generic error constants became private and redundant class-level Javadoc was removed from test classes.
   - I asked Claude Code to always review the diff for clean code before each commit. In the first such review it found that the `genericError()` overload without a cause was no longer used, and I had it removed.
+- **Spring Boot upgrade before the JWT step.**
+  - Claude Code proposed upgrading Spring Boot before adding Spring Security, at first to the latest 3.5.x patch.
+  - While checking the available versions, it found that the 3.5 line had reached the end of its open-source support on 2026-06-30 and no longer receives free security fixes. The README requires up-to-date libraries with no known vulnerabilities, so it recommended 4.1.1 instead, a major upgrade.
+  - I chose 4.1.1 and asked for it as a separate commit, so that the JWT step starts from supported libraries.
 - **Code conventions added to `CLAUDE.md` along the way:**
   - no inline comments in production code;
   - Javadoc on classes, public methods and relevant fields;

@@ -13,6 +13,12 @@ _To be completed_
 
 - **Fact-checking the AI's own documentation.** I dictated a list of "limitations" for `pre-analysis.md` that were partly inaccurate. Instead of writing them as given, Claude Code checked them against `git status` and the conversation history. It flagged the mismatches: `CLAUDE.md` had not been edited by hand, and four of the "missed" bugs had already been reported in a later message. It then asked how to proceed. The result was a more accurate account.
 - **Verifying that the AI-written tests actually catch the bug.** A passing test proves nothing on its own. After Claude Code fixed the `lastName` mapping bug in `AddUserAssembler` and wrote `AddUserAssemblerTest`, I temporarily put the bug back (`getFirstName()` instead of `getLastName()`) and ran the tests: they failed. I then restored the fix. This confirmed that the test guards against the regression and does not pass trivially. After the bug-fixing blocks, I made this check a project rule in `CLAUDE.md`, so that every bug fix is verified this way.
+- **Keeping the dependency upgrade under control.**
+  - *Upgrade.* Claude Code proposed upgrading Spring Boot before the JWT step, because the 3.5 line reached the end of its open-source support on 2026-06-30. After I chose 4.1.1, Claude Code changed the version in `pom.xml` to see what would break. I stopped it and asked why it had changed the version. It explained, described the current state (only `pom.xml` changed, two test imports broken) and offered to revert. I confirmed 4.1.1 as a separate commit.
+  - *Vulnerabilities found after the upgrade.* IntelliJ (Mend.io) reported transitive vulnerabilities on `spring-boot-starter-webmvc`: first one in Logback, then, after that was fixed, five more (four in Jackson shown in detail, one not shown). I shared IntelliJ's warnings. Claude Code looked up each CVE on NVD, matched it with the actual dependency tree and forced fixed versions through Spring Boot's version properties: Logback 1.6.5, Jackson 3.1.7, Tomcat 11.0.26.
+  - *A second Logback CVE.* While checking the Logback fix, Claude Code found a newer CVE (CVE-2026-104721) showing that the obvious choice, 1.6.3, was still affected.
+  - *The CVE that was not shown.* The two Tomcat CVEs were found by searching NVD for the Tomcat version in use, because IntelliJ did not show the fifth CVE in detail.
+  - *Confirmation.* I reloaded the Maven project in IntelliJ and confirmed that the warnings were gone.
 
 ## Personal assessment
 

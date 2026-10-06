@@ -4,12 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Spring Boot 3.5 / Java 17 / Maven demo app (`it.sara.demo`, main class `HighCardApplication`) used as a hiring exercise. README.md lists the required tasks: input validation (email + Italian phone numbers), SQL-injection hardening of the PUT endpoint, pagination/sorting/search for user listing, centralized exception handling, JWT auth (policy, issuer, expiration), bug fixing, unit tests, Javadoc, and an `/ai-assisted/` folder documenting AI usage (`pre-analysis.md`, `plan.md`, `report.md`).
+Spring Boot 4.1 / Java 17 / Maven demo app (`it.sara.demo`, main class `HighCardApplication`) used as a hiring exercise. README.md lists the required tasks: input validation (email + Italian phone numbers), SQL-injection hardening of the PUT endpoint, pagination/sorting/search for user listing, centralized exception handling, JWT auth (policy, issuer, expiration), bug fixing, unit tests, Javadoc, and an `/ai-assisted/` folder documenting AI usage (`pre-analysis.md`, `plan.md`, `report.md`).
 
 Hard constraints from the README:
 - Do **not** change the existing layered architecture.
 - Every response, errors included, returns HTTP **200**. The real outcome goes in `StatusDTO.code` inside the response body.
 - Third-party libraries must be current and have no known vulnerabilities.
+  - `pom.xml` overrides three versions managed by Spring Boot 4.1.1, to fix known CVEs in transitive dependencies:
+    - `logback.version` 1.6.5 (Boot ships 1.5.38): CVE-2026-19880, CVE-2026-104721;
+    - `jackson-bom.version` 3.1.7 (Boot ships 3.1.5): CVE-2026-68497, CVE-2026-83557, CVE-2026-91776, CVE-2026-91777;
+    - `tomcat.version` 11.0.26 (Boot ships 11.0.24): CVE-2026-65182, CVE-2026-66299.
+  - Remove each override once Spring Boot manages that version or a later one.
 
 ## Commands
 
