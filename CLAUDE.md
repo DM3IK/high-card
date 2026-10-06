@@ -21,7 +21,8 @@ Hard constraints from the README:
 Use the Maven wrapper (`mvnw.cmd` on Windows, `./mvnw` in bash):
 
 - Build: `./mvnw clean package`
-- Run: `./mvnw spring-boot:run`
+- Run: `JWT_SECRET=<at least 32 bytes> ./mvnw spring-boot:run` (PowerShell: `$env:JWT_SECRET='<at least 32 bytes>'; .\mvnw.cmd spring-boot:run`). The app refuses to start without a valid secret.
+- Get a token for manual calls: run `JwtTokenGenerator` (in `src/test/.../web/security`) with the same `JWT_SECRET`, then send `Authorization: Bearer <token>`.
 - All tests: `./mvnw test`
 - Single test class: `./mvnw test -Dtest=HighCardApplicationTests`
 - Single test method: `./mvnw test -Dtest=ClassName#methodName`
@@ -53,7 +54,17 @@ Request → `UserController` → web assembler → `Criteria*` → `UserService`
 - `GenericResponse.success(msg)` / `successStatus(msg)` build the success status; `GenericResponse.error(status)` builds an error response.
 - `web/handler/GlobalExceptionHandler` (`@RestControllerAdvice`) is the single place that turns exceptions into a `GenericResponse`, always with HTTP status 200. It handles `GenericException`, malformed body (400), unsupported method (405) and media type (415), unknown path (404), and any other exception as a generic 500 that hides internal details.
 - Request errors are logged **only** in the handler: 5xx at ERROR with trace id and stack trace, 4xx at WARN with trace id and message. Services create exceptions (keeping the cause) but do not log them.
-- Spring Security errors (401/403) are raised in filters before the controllers, so the handler does not see them; they need their own handlers with the same response format.
+- Spring Security errors (401/403) are raised in filters before the controllers, so the handler does not see them. `web/security/SecurityErrorHandler` writes them in the same format (HTTP 200 + `StatusDTO`) and logs the reason at WARN.
+
+**Security (`web/security/`)**
+- `SecurityConfig`: a stateless resource server that requires a Bearer JWT on every request. Tokens are validated on:
+  - signature: HS256 with `security.jwt.secret`;
+  - issuer: `security.jwt.issuer`;
+  - expiration: `exp` is required, with `security.jwt.clock-skew` tolerance;
+  - policy: `PUT /user/v1/user` needs scope `users:write`, `POST /user/v1/user` needs `users:read`.
+- `JwtProperties` validates the settings at startup (non-blank issuer, secret of at least 256 bits) and masks the secret in `toString()`.
+- The real secret comes from the `JWT_SECRET` environment variable and is never committed. The only committed secret is a test-only value in `src/test/resources/application.properties`, used with the `TestTokens` helper.
+- `@WebMvcTest` tests that are not about security use `@AutoConfigureMockMvc(addFilters = false)`. `@SpringBootTest` tests send a token from `TestTokens`.
 
 **Endpoints**
 Both endpoints are mapped under `/user/v1/user`:

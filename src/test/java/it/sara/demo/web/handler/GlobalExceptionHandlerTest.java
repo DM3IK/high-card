@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -39,7 +40,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Security filters are disabled here because this test covers the exception handler only;
+ * authentication and authorization are covered by {@code JwtSecurityIntegrationTest}.
+ */
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({AddUserAssembler.class, GetUsersAssembler.class})
 @ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlerTest {

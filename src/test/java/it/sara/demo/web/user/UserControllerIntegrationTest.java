@@ -2,11 +2,13 @@ package it.sara.demo.web.user;
 
 import it.sara.demo.service.database.FakeDatabase;
 import it.sara.demo.service.database.model.User;
+import it.sara.demo.web.security.TestTokens;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerIntegrationTest {
 
     private static final String USER_URL = "/user/v1/user";
+    private static final String BEARER = "Bearer " + TestTokens.valid("users:read", "users:write");
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,7 +45,7 @@ class UserControllerIntegrationTest {
                  "phoneNumber":"0039 333 123 4567"}
                 """;
 
-        mockMvc.perform(put(USER_URL).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(200));
 
@@ -67,7 +70,7 @@ class UserControllerIntegrationTest {
                  "email":"mario.rossi@example.com","phoneNumber":"+393331234567"}
                 """;
 
-        mockMvc.perform(put(USER_URL).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(400))
                 .andExpect(jsonPath("$.status.message").value("Invalid first name"));
@@ -77,7 +80,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void searchUsers_withEmptyBody_returnsFirstPageSortedByLastName() throws Exception {
-        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(200))
                 .andExpect(jsonPath("$.total").value(10))
@@ -88,7 +91,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void searchUsers_withoutBody_returnsFirstPageSortedByLastName() throws Exception {
-        mockMvc.perform(post(USER_URL))
+        mockMvc.perform(post(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(200))
                 .andExpect(jsonPath("$.total").value(10))
@@ -103,7 +106,7 @@ class UserControllerIntegrationTest {
                 {"query":"RO","order":"BY_FIRSTNAME","offset":0,"limit":2}
                 """;
 
-        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(200))
                 .andExpect(jsonPath("$.total").value(3))
@@ -114,7 +117,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void searchUsers_withInvalidOrder_returns400InvalidOrder() throws Exception {
-        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content("{\"order\":\"BY_AGE\"}"))
+        mockMvc.perform(post(USER_URL).header(HttpHeaders.AUTHORIZATION, BEARER).contentType(MediaType.APPLICATION_JSON).content("{\"order\":\"BY_AGE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status.code").value(400))
                 .andExpect(jsonPath("$.status.message").value("Invalid order"));
