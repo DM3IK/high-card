@@ -23,6 +23,9 @@ public record JwtProperties(String issuer, String secret, Duration clockSkew) {
     /**
      * Validates the settings and applies the default clock skew.
      *
+     * @param issuer    the only issuer accepted in tokens, not blank
+     * @param secret    the shared HS256 secret, at least 32 bytes
+     * @param clockSkew the expiration tolerance, not negative; null means 30 seconds
      * @throws IllegalStateException if the issuer is blank, the secret is shorter than 256 bits
      *                               or the clock skew is negative
      */

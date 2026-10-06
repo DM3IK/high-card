@@ -29,9 +29,13 @@ public class CriteriaGetUsers extends GenericCriteria {
      */
     @Getter
     public enum OrderType {
+        /** First name, A to Z. */
         BY_FIRSTNAME("by firstName"),
+        /** First name, Z to A. */
         BY_FIRSTNAME_DESC("by firstName desc"),
+        /** Last name, A to Z; the default order. */
         BY_LASTNAME("by lastName"),
+        /** Last name, Z to A. */
         BY_LASTNAME_DESC("by lastName desc");
         private final String displayName;
 

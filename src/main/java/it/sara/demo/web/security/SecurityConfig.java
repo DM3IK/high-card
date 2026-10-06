@@ -92,6 +92,8 @@ public class SecurityConfig {
      * Makes the {@code exp} claim mandatory, because {@link JwtTimestampValidator} accepts tokens without it,
      * which would never expire. {@link JwtClaimValidator} rejects a token when the claim is missing and only then
      * applies its predicate, so a predicate that accepts any value turns it into a presence check.
+     *
+     * @return a validator that rejects tokens without {@code exp}
      */
     private static OAuth2TokenValidator<Jwt> requiredExpiration() {
         return new JwtClaimValidator<>(JwtClaimNames.EXP, value -> true);
