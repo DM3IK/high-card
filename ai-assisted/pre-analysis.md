@@ -9,7 +9,7 @@
 **Context**
 - `/init` was run in plan mode. Claude Code read the README, `pom.xml` and the source code, and generated `CLAUDE.md` (commands, layered architecture, request flow, conventions, README constraints).
 - Claude Code was then asked to read `README.md` and summarize the tasks and constraints.
-- Every change is approved manually. Auto mode is not used.
+- Most changes were approved manually; auto mode was enabled during part of the later work (the JWT review and the final documentation changes), and those changes were reviewed in the diff before each commit.
 
 ## Information provided before starting
 

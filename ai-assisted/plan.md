@@ -56,5 +56,5 @@ Before touching the code, Claude Code produced a list of 11 bugs with file, desc
 - verifying the Block A test by temporarily reintroducing the `lastName` bug;
 - correcting wording in the generated Javadoc;
 - removing by hand an inline comment;
-- limiting Claude Code's permanent permissions to reading project files and read-only git commands; every other action (edits, builds, other shell commands) required my approval each time, and I did not use auto mode;
+- limiting Claude Code's permanent permissions to reading project files and read-only git commands. Most changes were approved manually; auto mode was enabled during part of the later work (the JWT review and the final documentation changes), and those changes were reviewed in the diff before each commit;
 - using Claude (chat) as a second reviewer of Claude Code's output; this is how the cause-preserving `genericError(Throwable)` and the trace id logging gap came up.

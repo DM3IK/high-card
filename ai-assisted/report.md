@@ -24,6 +24,16 @@ _To be completed_
   - *A second Logback CVE.* While checking the Logback fix, Claude Code found a newer CVE (CVE-2026-104721) showing that the obvious choice, 1.6.3, was still affected.
   - *The CVE that was not shown.* The two Tomcat CVEs were found by searching NVD for the Tomcat version in use, because IntelliJ did not show the fifth CVE in detail.
   - *Confirmation.* I reloaded the Maven project in IntelliJ and confirmed that the warnings were gone.
+- **Testing the running application, not only the tests.**
+  - *While writing the guide.* Claude Code ran every command in `HOW_TO_RUN.md` as written, in both PowerShell and Bash: start with `JWT_SECRET`, token from `JwtTokenGenerator`, search, and user creation with phone normalization. The first version of the guide suggested `curl.exe` for PowerShell, but Windows PowerShell 5.1 broke JSON bodies containing spaces: creating a user with "+39 333 765 4321" returned "Malformed request body". The PowerShell examples now use `Invoke-RestMethod`, and the corrected commands were run again successfully.
+  - *My manual test.* I then followed the guide myself, in a separate PowerShell terminal: I started the application from IntelliJ with `JWT_SECRET`, generated a token with `JwtTokenGenerator` and called the API with `Invoke-RestMethod`. Results:
+    - search for "ro": code 200, total 3;
+    - creation of Giorgio Neri with "+39 333 765 4321": code 200, and a search for "neri" returned him with "+393337654321";
+    - request without a token: code 401;
+    - phone number with the +44 prefix: code 400, "Invalid phone number";
+    - first name "Robert'); DROP TABLE users;--": code 400, "Invalid first name".
+
+    The results matched the behaviour covered by the automated tests.
 
 ## Personal assessment
 
