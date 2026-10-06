@@ -18,18 +18,6 @@ public class GenericResponse {
     private StatusDTO status;
 
     /**
-     * Creates a success response.
-     *
-     * @param message the message for the client, or null for the default "Success"
-     * @return a new response with code 200 and a random trace id
-     */
-    public static GenericResponse success(String message) {
-        GenericResponse returnValue = new GenericResponse();
-        returnValue.setStatus(successStatus(message));
-        return returnValue;
-    }
-
-    /**
      * Creates the status of a successful request, for responses that extend this class.
      *
      * @param message the message for the client, or null for the default "Success"

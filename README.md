@@ -125,3 +125,9 @@ Add an `/ai-assisted/` folder to your repository containing one or more Markdown
 - The AI is not required to have completed the tasks correctly — the goal is to document the *process*, not the outcome.
 - Honest criticism is appreciated: a report that describes the tool's failures is more valuable than one that only highlights its successes.
 - If you used multiple tools, you may create separate subfolders (`/ai-assisted/claude-code/`, `/ai-assisted/gemini-cli/`, etc.)
+
+---
+
+## Solution notes
+
+To run the solution, see [HOW_TO_RUN.md](HOW_TO_RUN.md). The application needs the `JWT_SECRET` environment variable to start.

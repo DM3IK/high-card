@@ -13,7 +13,7 @@ Hard constraints from the README:
   - `pom.xml` overrides three versions managed by Spring Boot 4.1.1, to fix known CVEs in transitive dependencies:
     - `logback.version` 1.6.5 (Boot ships 1.5.38): CVE-2026-19880, CVE-2026-104721;
     - `jackson-bom.version` 3.1.7 (Boot ships 3.1.5): CVE-2026-68497, CVE-2026-83557, CVE-2026-91776, CVE-2026-91777;
-    - `tomcat.version` 11.0.26 (Boot ships 11.0.24): CVE-2026-65182, CVE-2026-66299.
+    - `tomcat.version` 11.0.26 (Boot ships 11.0.24): NVD lists 11 CVEs for 11.0.24 and none for 11.0.26, including CVE-2026-65182 and CVE-2026-66299 reported by IntelliJ.
   - Remove each override once Spring Boot manages that version or a later one.
 
 ## Commands
@@ -23,6 +23,7 @@ Use the Maven wrapper (`mvnw.cmd` on Windows, `./mvnw` in bash):
 - Build: `./mvnw clean package`
 - Run: `JWT_SECRET=<at least 32 bytes> ./mvnw spring-boot:run` (PowerShell: `$env:JWT_SECRET='<at least 32 bytes>'; .\mvnw.cmd spring-boot:run`). The app refuses to start without a valid secret.
 - Get a token for manual calls: run `JwtTokenGenerator` (in `src/test/.../web/security`) with the same `JWT_SECRET`, then send `Authorization: Bearer <token>`.
+- `HOW_TO_RUN.md` is the step-by-step guide for the reviewer (Bash and PowerShell); keep it in sync with these commands.
 - All tests: `./mvnw test`
 - Single test class: `./mvnw test -Dtest=HighCardApplicationTests`
 - Single test method: `./mvnw test -Dtest=ClassName#methodName`
@@ -51,7 +52,7 @@ Request → `UserController` → web assembler → `Criteria*` → `UserService`
 
 **Errors**
 - Services throw `GenericException`, a checked exception that carries a `StatusDTO` (`code`, `message`, `traceId`).
-- `GenericResponse.success(msg)` / `successStatus(msg)` build the success status; `GenericResponse.error(status)` builds an error response.
+- `GenericResponse.successStatus(msg)` builds the success status of any response type; `GenericResponse.error(status)` builds an error response.
 - `web/handler/GlobalExceptionHandler` (`@RestControllerAdvice`) is the single place that turns exceptions into a `GenericResponse`, always with HTTP status 200. It handles `GenericException`, malformed body (400), unsupported method (405) and media type (415), unknown path (404), and any other exception as a generic 500 that hides internal details.
 - Request errors are logged **only** in the handler: 5xx at ERROR with trace id and stack trace, 4xx at WARN with trace id and message. Services create exceptions (keeping the cause) but do not log them.
 - Spring Security errors (401/403) are raised in filters before the controllers, so the handler does not see them. `web/security/SecurityErrorHandler` writes them in the same format (HTTP 200 + `StatusDTO`) and logs the reason at WARN.
