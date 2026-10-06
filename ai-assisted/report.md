@@ -2,7 +2,31 @@
 
 ## Key prompts used
 
-_To be completed_
+The prompts were written in Italian; the quotes below are translated. They are grouped by what they were meant to control.
+
+**Context and ground rules**
+- *"Create the ai-assisted/ folder… do NOT invent content: leave a 'To be completed' placeholder under each heading. The text must describe only things that really happened."* This set the rule for all the AI-assisted documents.
+- *"I do all commits from the IntelliJ interface (Ctrl+K)… Don't give me instructions with git add or git commit: just tell me which files to tick and the commit message."* Claude Code never committed; I reviewed every diff and committed by hand.
+
+**Splitting the work and keeping control**
+- *"I approve the list. Let's proceed in blocks, stopping after each one so I can review and commit… After each block run ./mvnw test and show me the result."* The 11 bugs were fixed in three reviewable blocks.
+- *"I disagree on the injection: switching from field injection to constructor injection doesn't change the layered architecture, it improves testability and immutability. We'll do it as a separate refactoring after the bugs."* This overrode Claude Code's suggestion to keep field `@Autowired`.
+- *"Wait, why did you change the version in the pom?"* Claude Code had started the upgrade right after I chose the version in a multiple-choice question. I stopped it; Claude Code explained and offered to revert, and I then confirmed the Spring Boot 4.1.1 upgrade as a separate commit.
+
+**Quality rules**
+- *"Every feature or bug fix must have tests that cover at least (a) the positive case, (b) edge cases such as null, empty or whitespace-only strings and boundary values, (c) the error or regression case. The number of tests depends on the logic: don't add tests that verify nothing new."* This was added to `CLAUDE.md` and applied retroactively.
+- *"No useless comments; always follow the README guidance."* Later: *"Always check the files in the commit and verify that the code is clean; remove useless comments."* This led to the no-inline-comments convention and a review of the diff before every commit.
+- Before each commit I asked for a dedicated review pass of the whole diff, not only of the latest change. These passes found real issues: the JWT secret printed by the record's `toString()`, a misleading validator, an unused test dependency and a redundant test.
+
+**Design decisions given as precise instructions**
+- *"Also add an overload genericError(Throwable cause)… so that when an unexpected error becomes a generic 500, the original cause stays in the stack trace. The client must still receive only 'Generic error'."*
+- *"In the generic catch, create the exception first and then log it with the trace id, so the error received by the client can be found in the log."*
+- *"Option 1: log only in the handler. 5xx: log.error with trace id and stack trace; 4xx: log.warn with trace id and message, no stack trace. For HttpMessageNotReadableException return a generic message, without Jackson details."*
+- *"The search POST must also work without a body… Choose whether in the controller or in the assembler, but justify the choice."*
+
+**Fact-checking the AI**
+- *"Check that every number corresponds to executions that really happened in this session. If something has no match in the output, remove or rephrase it. Tell me which commands you ran and with what result."*
+- *"Check every point against the conversation history."* I made this a standing rule for the AI-assisted documents, because some of my drafts were written from memory: when a statement had no match in the history, Claude Code flagged it and we corrected it before committing.
 
 ## Difficulties encountered
 
@@ -37,4 +61,15 @@ _To be completed_
 
 ## Personal assessment
 
-_To be completed_
+**Time saved.** Without AI it would have taken me at least twice as long. For a task like this I would normally have done much more research on Stack Overflow, Reddit and the official documentation. I have used several AI services in the past and tested them in different ways; today the one I use most is Claude Code. I had already implemented authentication in other projects, and the difference is clear: without AI it takes much longer.
+
+**Where it helped most.** Reviewing code on the fly, writing documentation and notes, and repetitive work such as writing JUnit tests. It was especially useful for the Javadoc, the most tedious part of the job: it drafted it quickly and I only had to review and correct it. It also helped with checks I would have done less consistently on my own: checking dependency versions and known vulnerabilities, and making sure tests really fail when the bug is put back.
+
+**Where it fell short.** AI always needs to be reviewed, because it often makes mistakes: it does not know certain conditions of the project and does not always understand the context. That is why it is not always effective and needs supervision. Some concrete examples from this work:
+- it wrote correct, tested code with a design flaw (the trace id returned to the client was never written to the log), which only came up during review;
+- some tests passed for the wrong reason: for example, the expired-token test was rejecting the token because of inconsistent dates, not because of the expiration;
+- the vulnerabilities in transitive dependencies were reported by IntelliJ, not by the AI.
+
+**What I would do differently.** I would set up from the start the rules I introduced along the way (testing conventions, no useless comments, verifying fixes by putting the bug back), and I would keep manual approval for the whole job: I used auto mode in some phases, and that is exactly where I had less control over individual changes.
+
+**In short:** AI speeds up the work a lot, but the result depends on how well you guide and check it. The decisions, the review and the responsibility for the code remain mine.
