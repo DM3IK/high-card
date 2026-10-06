@@ -53,7 +53,13 @@ Request → `UserController` → web assembler → `Criteria*` → `UserService`
 **Endpoints**
 Both endpoints are mapped under `/user/v1/user`:
 - `PUT` adds a user.
-- `POST` lists or searches users. `CriteriaGetUsers` has `query`, `offset`, `limit` and an `OrderType` enum.
+- `POST` searches users. Every body field is optional:
+  - `query`: case-insensitive `contains` on first name, last name and email;
+  - `offset`: default 0;
+  - `limit`: default 10, max 100;
+  - `order`: an `OrderType` name, default `BY_LASTNAME`.
+
+  `GetUsersAssembler` maps the request to `CriteriaGetUsers` and leaves missing values null; `UserServiceImpl` applies the defaults and limits. The response contains the page of users and `total`, the number of matches before paging. Sorting uses an Italian `Collator` and is stable across pages (ties broken by the other name, then by guid).
 
 ## Conventions
 - Dependencies are injected through the constructor: `private final` fields with Lombok `@RequiredArgsConstructor`.

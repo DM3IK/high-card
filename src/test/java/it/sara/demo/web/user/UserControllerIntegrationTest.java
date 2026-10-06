@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,5 +73,50 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.status.message").value("Invalid first name"));
 
         assertEquals(seed.size(), FakeDatabase.TABLE_USER.size());
+    }
+
+    @Test
+    void searchUsers_withEmptyBody_returnsFirstPageSortedByLastName() throws Exception {
+        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status.code").value(200))
+                .andExpect(jsonPath("$.total").value(10))
+                .andExpect(jsonPath("$.users.length()").value(10))
+                .andExpect(jsonPath("$.users[0].lastName").value("Bianchi"))
+                .andExpect(jsonPath("$.users[9].lastName").value("Rossi"));
+    }
+
+    @Test
+    void searchUsers_withoutBody_returnsFirstPageSortedByLastName() throws Exception {
+        mockMvc.perform(post(USER_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status.code").value(200))
+                .andExpect(jsonPath("$.total").value(10))
+                .andExpect(jsonPath("$.users.length()").value(10))
+                .andExpect(jsonPath("$.users[0].lastName").value("Bianchi"))
+                .andExpect(jsonPath("$.users[9].lastName").value("Rossi"));
+    }
+
+    @Test
+    void searchUsers_withQueryOrderAndLimit_returnsSortedPageAndTotalMatches() throws Exception {
+        String body = """
+                {"query":"RO","order":"BY_FIRSTNAME","offset":0,"limit":2}
+                """;
+
+        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status.code").value(200))
+                .andExpect(jsonPath("$.total").value(3))
+                .andExpect(jsonPath("$.users.length()").value(2))
+                .andExpect(jsonPath("$.users[0].firstName").value("Alessandro"))
+                .andExpect(jsonPath("$.users[1].firstName").value("Luca"));
+    }
+
+    @Test
+    void searchUsers_withInvalidOrder_returns400InvalidOrder() throws Exception {
+        mockMvc.perform(post(USER_URL).contentType(MediaType.APPLICATION_JSON).content("{\"order\":\"BY_AGE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status.code").value(400))
+                .andExpect(jsonPath("$.status.message").value("Invalid order"));
     }
 }

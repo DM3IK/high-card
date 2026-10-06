@@ -1,10 +1,15 @@
 package it.sara.demo.service.user.impl;
 
+import it.sara.demo.dto.UserDTO;
 import it.sara.demo.exception.GenericException;
+import it.sara.demo.service.assembler.UserAssembler;
 import it.sara.demo.service.database.UserRepository;
 import it.sara.demo.service.database.model.User;
 import it.sara.demo.service.user.criteria.CriteriaAddUser;
+import it.sara.demo.service.user.criteria.CriteriaGetUsers;
+import it.sara.demo.service.user.criteria.CriteriaGetUsers.OrderType;
 import it.sara.demo.service.user.result.AddUserResult;
+import it.sara.demo.service.user.result.GetUsersResult;
 import it.sara.demo.service.user.validator.UserValidator;
 import it.sara.demo.service.util.StringUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -19,6 +25,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -42,7 +50,7 @@ class UserServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(new StringUtil(), new UserValidator(), userRepository);
+        userService = new UserServiceImpl(new StringUtil(), new UserValidator(), userRepository, new UserAssembler());
     }
 
     @Test
@@ -193,6 +201,173 @@ class UserServiceImplTest {
                 () -> assertNotNull(exception.getStatus().getTraceId()),
                 () -> assertSame(failure, exception.getCause())
         );
+    }
+
+    @Test
+    void getUsers_withNoParameters_returnsFirstTenUsersByLastNameAndTotal() throws GenericException {
+        List<User> users = new ArrayList<>();
+        for (char lastName = 'L'; lastName >= 'A'; lastName--) {
+            users.add(user("g" + lastName, "Mario", String.valueOf(lastName), "mario@example.com"));
+        }
+        when(userRepository.getAll()).thenReturn(users);
+
+        GetUsersResult result = userService.getUsers(new CriteriaGetUsers());
+
+        assertAll(
+                () -> assertEquals(12, result.getTotal()),
+                () -> assertEquals(List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J"),
+                        result.getUsers().stream().map(UserDTO::getLastName).toList())
+        );
+    }
+
+    @ParameterizedTest(name = "\"{0}\"")
+    @CsvSource(delimiter = '|', value = {
+            "ROSSI     | Anna Rossi;Mario Rossi",
+            "mario     | Mario Rossi",
+            "@OTHER.IT | Paolo Ávila;Giulia Bianchi",
+            "' luca '  | Luca Romano",
+            "zzz       | ''"
+    })
+    void getUsers_withQuery_filtersCaseInsensitivelyOnNamesAndEmail(String query, String expectedNames)
+            throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setQuery(query);
+
+        GetUsersResult result = userService.getUsers(criteria);
+
+        List<String> expected = expectedNames.isEmpty() ? List.of() : List.of(expectedNames.split(";"));
+        assertAll(
+                () -> assertEquals(expected, fullNames(result)),
+                () -> assertEquals(expected.size(), result.getTotal())
+        );
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void getUsers_withNullOrBlankQuery_returnsEveryUser(String query) throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setQuery(query);
+
+        assertEquals(5, userService.getUsers(criteria).getTotal());
+    }
+
+    /**
+     * Covers the tie-break (the two "Rossi" are ordered by first name) and the Italian collation
+     * ("Ávila" sorts before "Bianchi", while plain string comparison would put it last).
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("sortOrders")
+    void getUsers_withOrder_sortsByTheRequestedFieldAndDirection(OrderType order, List<String> expectedNames)
+            throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setOrder(order);
+
+        assertEquals(expectedNames, fullNames(userService.getUsers(criteria)));
+    }
+
+    static Stream<Arguments> sortOrders() {
+        return Stream.of(
+                Arguments.of(OrderType.BY_LASTNAME,
+                        List.of("Paolo Ávila", "Giulia Bianchi", "Luca Romano", "Anna Rossi", "Mario Rossi")),
+                Arguments.of(OrderType.BY_LASTNAME_DESC,
+                        List.of("Mario Rossi", "Anna Rossi", "Luca Romano", "Giulia Bianchi", "Paolo Ávila")),
+                Arguments.of(OrderType.BY_FIRSTNAME,
+                        List.of("Anna Rossi", "Giulia Bianchi", "Luca Romano", "Mario Rossi", "Paolo Ávila")),
+                Arguments.of(OrderType.BY_FIRSTNAME_DESC,
+                        List.of("Paolo Ávila", "Mario Rossi", "Luca Romano", "Giulia Bianchi", "Anna Rossi"))
+        );
+    }
+
+    @ParameterizedTest(name = "offset={0}, limit={1}")
+    @CsvSource(delimiter = '|', value = {
+            "0 | 2   | Anna Rossi;Giulia Bianchi",
+            "1 | 2   | Giulia Bianchi;Luca Romano",
+            "4 | 100 | Paolo Ávila",
+            "5 | 1   | ''",
+            "0 | 1   | Anna Rossi"
+    })
+    void getUsers_withOffsetAndLimit_returnsTheRequestedPageAndTheFullTotal(int offset, int limit,
+                                                                            String expectedNames)
+            throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setOffset(offset);
+        criteria.setLimit(limit);
+        criteria.setOrder(OrderType.BY_FIRSTNAME);
+
+        GetUsersResult result = userService.getUsers(criteria);
+
+        List<String> expected = expectedNames.isEmpty() ? List.of() : List.of(expectedNames.split(";"));
+        assertAll(
+                () -> assertEquals(expected, fullNames(result)),
+                () -> assertEquals(5, result.getTotal())
+        );
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("invalidSearchParameters")
+    void getUsers_withInvalidParameter_throws400WithParameterMessage(Consumer<CriteriaGetUsers> setInvalidValue,
+                                                                      String expectedMessage) {
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        setInvalidValue.accept(criteria);
+
+        GenericException exception = assertThrows(GenericException.class, () -> userService.getUsers(criteria));
+
+        assertAll(
+                () -> assertEquals(400, exception.getStatus().getCode()),
+                () -> assertEquals(expectedMessage, exception.getStatus().getMessage())
+        );
+        verify(userRepository, never()).getAll();
+    }
+
+    static Stream<Arguments> invalidSearchParameters() {
+        return Stream.of(
+                Arguments.of((Consumer<CriteriaGetUsers>) c -> c.setOffset(-1), "Invalid offset"),
+                Arguments.of((Consumer<CriteriaGetUsers>) c -> c.setLimit(0), "Invalid limit"),
+                Arguments.of((Consumer<CriteriaGetUsers>) c -> c.setLimit(101), "Invalid limit"),
+                Arguments.of((Consumer<CriteriaGetUsers>) c -> c.setQuery("a".repeat(101)), "Invalid query")
+        );
+    }
+
+    @Test
+    void getUsers_withParametersAtTheirLimits_isAccepted() throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setOffset(0);
+        criteria.setLimit(100);
+        criteria.setQuery("a".repeat(100));
+
+        assertEquals(0, userService.getUsers(criteria).getTotal());
+    }
+
+    private static List<User> sampleUsers() {
+        return List.of(
+                user("g1", "Mario", "Rossi", "mario.rossi@example.com"),
+                user("g2", "Giulia", "Bianchi", "giulia@other.it"),
+                user("g3", "Luca", "Romano", "luca.romano@example.com"),
+                user("g4", "Anna", "Rossi", "anna.r@example.com"),
+                user("g5", "Paolo", "Ávila", "paolo@other.it")
+        );
+    }
+
+    private static User user(String guid, String firstName, String lastName, String email) {
+        User user = new User();
+        user.setGuid(guid);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setPhoneNumber("+393331234567");
+        return user;
+    }
+
+    private static List<String> fullNames(GetUsersResult result) {
+        return result.getUsers().stream()
+                .map(dto -> dto.getFirstName() + " " + dto.getLastName())
+                .toList();
     }
 
     private static CriteriaAddUser validCriteria() {

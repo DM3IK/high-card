@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import it.sara.demo.exception.GenericException;
 import it.sara.demo.service.user.UserService;
 import it.sara.demo.web.assembler.AddUserAssembler;
+import it.sara.demo.web.assembler.GetUsersAssembler;
 import it.sara.demo.web.user.UserController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
-@Import(AddUserAssembler.class)
+@Import({AddUserAssembler.class, GetUsersAssembler.class})
 @ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlerTest {
 

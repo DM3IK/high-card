@@ -4,13 +4,23 @@ import it.sara.demo.service.criteria.GenericCriteria;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Search parameters for the user list. Null values mean "use the default", which the service decides.
+ */
 @Getter
 @Setter
 public class CriteriaGetUsers extends GenericCriteria {
 
+    /** Text searched case-insensitively in first name, last name and email; null or blank means no filter. */
     private String query;
-    private int offset;
-    private int limit;
+
+    /** Index of the first result to return. */
+    private Integer offset;
+
+    /** Maximum number of results to return. */
+    private Integer limit;
+
+    /** Sort order of the results. */
     private OrderType order;
 
     /**

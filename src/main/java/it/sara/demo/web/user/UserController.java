@@ -3,7 +3,10 @@ package it.sara.demo.web.user;
 import it.sara.demo.exception.GenericException;
 import it.sara.demo.service.user.UserService;
 import it.sara.demo.service.user.criteria.CriteriaAddUser;
+import it.sara.demo.service.user.criteria.CriteriaGetUsers;
+import it.sara.demo.service.user.result.GetUsersResult;
 import it.sara.demo.web.assembler.AddUserAssembler;
+import it.sara.demo.web.assembler.GetUsersAssembler;
 import it.sara.demo.web.response.GenericResponse;
 import it.sara.demo.web.user.request.AddUserRequest;
 import it.sara.demo.web.user.request.GetUsersRequest;
@@ -29,6 +32,8 @@ public class UserController {
 
     private final AddUserAssembler addUserAssembler;
 
+    private final GetUsersAssembler getUsersAssembler;
+
     /**
      * Creates a new user.
      *
@@ -45,8 +50,22 @@ public class UserController {
         return ResponseEntity.ok(returnValue);
     }
 
+    /**
+     * Searches users, with case-insensitive filtering, sorting and pagination.
+     *
+     * @param request the search parameters; the body and every field in it are optional
+     * @return a response with the requested page of users and the total number of matches
+     * @throws GenericException if a search parameter is invalid
+     */
     @RequestMapping(value = {"/v1/user"}, method = RequestMethod.POST)
-    public ResponseEntity<GetUsersResponse> getUsers(@RequestBody GetUsersRequest request) throws GenericException {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<GetUsersResponse> getUsers(@RequestBody(required = false) GetUsersRequest request)
+            throws GenericException {
+        CriteriaGetUsers criteria = getUsersAssembler.toCriteria(request);
+        GetUsersResult result = userService.getUsers(criteria);
+        GetUsersResponse returnValue = new GetUsersResponse();
+        returnValue.setStatus(GenericResponse.successStatus("Search completed."));
+        returnValue.setUsers(result.getUsers());
+        returnValue.setTotal(result.getTotal());
+        return ResponseEntity.ok(returnValue);
     }
 }
