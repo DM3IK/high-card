@@ -37,6 +37,10 @@ The prompts were written in Italian; the quotes below are translated. They are g
   - *How it surfaced.* The test for a token expired 10 seconds ago, which should be accepted thanks to the 30-second clock skew, failed. Claude Code read the rejection reason in the log and found the cause. This also meant that the test for a token expired beyond the clock skew had been passing for the wrong reason: it checked only the 401 code, not why the token was rejected.
   - *The fix.* Claude Code fixed the helper (tokens are now issued one hour before they expire) and strengthened the tests: for every invalid token (expired, missing expiration, wrong issuer, wrong signature, unsigned, malformed) they now also check the rejection reason written in the log. It then checked that each logged reason was the expected one.
   - *Lesson.* For security tests, asserting the error code is not enough; the test must also prove which check rejected the request.
+- **An inconsistency I found myself after the push.**
+  - *The issue.* While reading the code and reasoning about the tests after the push, I noticed that `UserValidator` trimmed names and email before validating them, but not the phone number. So " Mario " was accepted, while " 3331234567" and "3331234567 " were rejected with code 400 "Invalid phone number". All the AI-written tests passed, because none of them covered spaces around the phone number.
+  - *The fix.* I reported it to Claude Code with these two examples. It first wrote a regression test with four cases (leading, trailing and surrounding spaces, plus tab and newline), which failed against the existing code. Then it added the trim to `normalizePhoneNumber`, and the full suite passed: 217 tests.
+  - *Lesson.* The rules applied to similar inputs must be checked side by side. A green suite only shows that the cases someone thought of work.
 
 ## Approaches adopted
 

@@ -86,18 +86,22 @@ public class UserValidator {
     }
 
     /**
-     * Validates an Italian phone number and converts it to the stored format: {@code +39} followed by digits only.
-     * The international prefix ({@code +39} or {@code 0039}) is optional, and digit groups can be separated
-     * by single spaces or hyphens.
+     * Removes leading and trailing spaces from an Italian phone number, validates it and converts it to the stored
+     * format: {@code +39} followed by digits only. The international prefix ({@code +39} or {@code 0039}) is
+     * optional, and digit groups can be separated by single spaces or hyphens.
      *
      * @param phoneNumber the phone number to check
      * @return the normalized number, or an empty optional if the number is not a valid Italian number
      */
     public Optional<String> normalizePhoneNumber(String phoneNumber) {
-        if (phoneNumber == null || !PHONE_FORMAT.matcher(phoneNumber).matches()) {
+        if (phoneNumber == null) {
             return Optional.empty();
         }
-        String digits = phoneNumber.replaceAll("[ -]", "");
+        String trimmed = phoneNumber.trim();
+        if (!PHONE_FORMAT.matcher(trimmed).matches()) {
+            return Optional.empty();
+        }
+        String digits = trimmed.replaceAll("[ -]", "");
         String nationalNumber;
         if (digits.startsWith(ITALIAN_PREFIX)) {
             nationalNumber = digits.substring(ITALIAN_PREFIX.length());

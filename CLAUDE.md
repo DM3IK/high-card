@@ -42,7 +42,7 @@ There are two layers, and each one has its own object types. Keep them separate.
 - Services (`service/user/UserService` interface plus `impl/UserServiceImpl`) accept `Criteria*` objects (which extend `GenericCriteria`) and return `*Result` objects (which extend `GenericResult` or `GenericPagedResult`).
 - Services must never see web Request or Response types.
 - `service/assembler/UserAssembler` maps the `User` entity to `UserDTO` (in `dto/`).
-- `service/user/validator/UserValidator` holds the whitelist rules for names, email and Italian phone numbers. This is also the defense against injection on the PUT endpoint (README task 2), since there is no SQL layer to parameterize. Values are stored normalized: names and email trimmed, phone numbers as `+39` followed by digits only.
+- `service/user/validator/UserValidator` holds the whitelist rules for names, email and Italian phone numbers. This is also the defense against injection on the PUT endpoint (README task 2), since there is no SQL layer to parameterize. Every value is trimmed before validation, and values are stored normalized: phone numbers as `+39` followed by digits only.
 
 **Persistence (`service/database/`)**
 - `UserRepository` is a `@Component` that wraps `FakeDatabase.TABLE_USER`, a static in-memory `List<User>` seeded with 10 users. There is no real database or JPA.

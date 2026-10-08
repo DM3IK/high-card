@@ -150,6 +150,16 @@ class UserValidatorTest {
         assertEquals(Optional.of(expected), validator.normalizePhoneNumber(phoneNumber));
     }
 
+    /**
+     * Regression: names and email were trimmed but the phone number was not,
+     * so a number with a leading or trailing space was rejected.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {" 3331234567", "3331234567 ", "  +39 333 123 4567  ", "\t3331234567\n"})
+    void normalizePhoneNumber_withLeadingOrTrailingSpaces_returnsNormalizedNumber(String phoneNumber) {
+        assertEquals(Optional.of("+393331234567"), validator.normalizePhoneNumber(phoneNumber));
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {
