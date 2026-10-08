@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.text.Collator;
+import java.text.Normalizer;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -104,7 +105,9 @@ public class UserServiceImpl implements UserService {
 
     /**
      * Searches users: filters them with a case-insensitive {@code contains} on first name, last name and email,
-     * sorts them and returns the requested page. Missing parameters use the defaults: offset 0, limit 10,
+     * sorts them and returns the requested page. The query is converted to the composed Unicode form used for
+     * stored names, so an accented letter matches however the client encodes it.
+     * Missing parameters use the defaults: offset 0, limit 10,
      * order {@link OrderType#BY_LASTNAME}. Users with the same sort key are ordered by the other name and then
      * by guid, so the order is stable across pages.
      *
@@ -124,7 +127,8 @@ public class UserServiceImpl implements UserService {
 
             int offset = criteriaGetUsers.getOffset() != null ? criteriaGetUsers.getOffset() : 0;
             int limit = criteriaGetUsers.getLimit() != null ? criteriaGetUsers.getLimit() : DEFAULT_LIMIT;
-            String query = criteriaGetUsers.getQuery() != null ? criteriaGetUsers.getQuery().trim() : "";
+            String query = criteriaGetUsers.getQuery() != null
+                    ? Normalizer.normalize(criteriaGetUsers.getQuery().trim(), Normalizer.Form.NFC) : "";
             OrderType order = criteriaGetUsers.getOrder() != null ? criteriaGetUsers.getOrder() : DEFAULT_ORDER;
 
             if (offset < 0) {

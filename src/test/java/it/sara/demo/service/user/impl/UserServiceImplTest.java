@@ -25,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -241,6 +242,19 @@ class UserServiceImplTest {
                 () -> assertEquals(expected, fullNames(result)),
                 () -> assertEquals(expected.size(), result.getTotal())
         );
+    }
+
+    /**
+     * Regression: names are stored in composed form (NFC) but the query was not normalized, so an accented
+     * letter sent as base letter plus combining accent ("A" + U+0301) did not match the stored "Á".
+     */
+    @Test
+    void getUsers_withDecomposedAccentInQuery_findsTheComposedStoredName() throws GenericException {
+        when(userRepository.getAll()).thenReturn(sampleUsers());
+        CriteriaGetUsers criteria = new CriteriaGetUsers();
+        criteria.setQuery(Normalizer.normalize("Ávila", Normalizer.Form.NFD));
+
+        assertEquals(List.of("Paolo Ávila"), fullNames(userService.getUsers(criteria)));
     }
 
     @ParameterizedTest

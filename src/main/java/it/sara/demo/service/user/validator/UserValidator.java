@@ -37,8 +37,12 @@ public class UserValidator {
     /** Optional leading {@code +}, then digit groups separated by a single space or hyphen. */
     private static final Pattern PHONE_FORMAT = Pattern.compile("^\\+?\\d+([ -]\\d+)*$");
 
-    /** Italian mobile numbers ({@code 3} plus 8 or 9 digits) or landline numbers ({@code 0} plus 5 to 10 digits). */
-    private static final Pattern ITALIAN_NATIONAL_NUMBER = Pattern.compile("^(3\\d{8,9}|0\\d{5,10})$");
+    /**
+     * Italian mobile numbers ({@code 3} plus 8 or 9 digits) or landline numbers ({@code 0} plus 5 to 10 digits).
+     * The second digit of a landline is never {@code 0}: Italian area codes do not start with {@code 00},
+     * which is the prefix for calling abroad.
+     */
+    private static final Pattern ITALIAN_NATIONAL_NUMBER = Pattern.compile("^(3\\d{8,9}|0[1-9]\\d{4,9})$");
 
     private static final String ITALIAN_PREFIX = "+39";
     private static final String ITALIAN_PREFIX_WITH_ZEROS = "0039";

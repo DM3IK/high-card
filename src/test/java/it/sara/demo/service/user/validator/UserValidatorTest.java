@@ -184,6 +184,16 @@ class UserValidatorTest {
         assertTrue(validator.normalizePhoneNumber(phoneNumber).isEmpty());
     }
 
+    /**
+     * Regression: a number starting with {@code 00} passed as an Italian landline, so a foreign number dialed
+     * with the international prefix (here the United Kingdom, {@code 0044}) was stored as {@code +3900442071234}.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"0044 2071 234", "00442071234", "+39 0012345678", "0039 001234", "001234"})
+    void normalizePhoneNumber_withDoubleZeroAfterThePrefix_returnsEmpty(String phoneNumber) {
+        assertTrue(validator.normalizePhoneNumber(phoneNumber).isEmpty());
+    }
+
     private static String email(int localPartLength, int totalLength) {
         StringBuilder domain = new StringBuilder("it");
         int remaining = totalLength - localPartLength - 1 - domain.length();

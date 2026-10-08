@@ -13,6 +13,7 @@ import it.sara.demo.web.user.request.GetUsersRequest;
 import it.sara.demo.web.user.response.AddUserResponse;
 import it.sara.demo.web.user.response.GetUsersResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,7 +42,7 @@ public class UserController {
      * @return a response with code 200 and the message "User added."
      * @throws GenericException if the data is invalid or the user cannot be saved
      */
-    @RequestMapping(value = {"/v1/user"}, method = RequestMethod.PUT)
+    @RequestMapping(value = {"/v1/user"}, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AddUserResponse> addUser(@RequestBody AddUserRequest request) throws GenericException {
         CriteriaAddUser criteria = addUserAssembler.toCriteria(request);
         userService.addUser(criteria);
@@ -57,7 +58,7 @@ public class UserController {
      * @return a response with the requested page of users and the total number of matches
      * @throws GenericException if a search parameter is invalid
      */
-    @RequestMapping(value = {"/v1/user"}, method = RequestMethod.POST)
+    @RequestMapping(value = {"/v1/user"}, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetUsersResponse> getUsers(@RequestBody(required = false) GetUsersRequest request)
             throws GenericException {
         CriteriaGetUsers criteria = getUsersAssembler.toCriteria(request);

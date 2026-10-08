@@ -53,7 +53,7 @@ Request → `UserController` → web assembler → `Criteria*` → `UserService`
 **Errors**
 - Services throw `GenericException`, a checked exception that carries a `StatusDTO` (`code`, `message`, `traceId`).
 - `GenericResponse.successStatus(msg)` builds the success status of any response type; `GenericResponse.error(status)` builds an error response.
-- `web/handler/GlobalExceptionHandler` (`@RestControllerAdvice`) is the single place that turns exceptions into a `GenericResponse`, always with HTTP status 200. It handles `GenericException`, malformed body (400), unsupported method (405) and media type (415), unknown path (404), and any other exception as a generic 500 that hides internal details.
+- `web/handler/GlobalExceptionHandler` (`@RestControllerAdvice`) is the single place that turns exceptions into a `GenericResponse`, always with HTTP status 200. It handles `GenericException`, malformed body (400), unsupported method (405), unsupported media type (415), an `Accept` header that excludes JSON (406; both endpoints declare `produces` JSON, so the request is rejected before the controller runs), unknown path (404), and any other exception as a generic 500 that hides internal details.
 - Request errors are logged **only** in the handler: 5xx at ERROR with trace id and stack trace, 4xx at WARN with trace id and message. Services create exceptions (keeping the cause) but do not log them.
 - Spring Security errors (401/403) are raised in filters before the controllers, so the handler does not see them. `web/security/SecurityErrorHandler` writes them in the same format (HTTP 200 + `StatusDTO`) and logs the reason at WARN.
 

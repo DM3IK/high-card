@@ -4,8 +4,10 @@ import it.sara.demo.dto.StatusDTO;
 import it.sara.demo.exception.GenericException;
 import it.sara.demo.web.response.GenericResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +16,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Turns every exception raised while handling a request into a {@link GenericResponse}.
- * The HTTP status is always 200; the real outcome is in the response {@link StatusDTO}.
+ * The HTTP status is always 200 and the body is always JSON, whatever the {@code Accept} header asks for;
+ * the real outcome is in the response {@link StatusDTO}.
  * This is the only place where request errors are logged: 5xx errors at ERROR level with the stack trace,
  * 4xx errors at WARN level with the message only. Both include the trace id returned to the client.
  */
@@ -67,6 +70,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles a request whose {@code Accept} header excludes JSON, the only format the endpoints produce.
+     * The request is rejected before the controller runs, so nothing is stored.
+     *
+     * @param e the content negotiation error
+     * @return a response with code 406, written as JSON anyway
+     */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<GenericResponse> handleMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException e) {
+        return toResponse(new GenericException(406, "Media type not acceptable", e));
+    }
+
+    /**
      * Handles a request to a path that does not exist.
      *
      * @param e the missing resource error
@@ -95,6 +110,6 @@ public class GlobalExceptionHandler {
         } else {
             log.warn("Request rejected [code={}, traceId={}]: {}", status.getCode(), status.getTraceId(), status.getMessage());
         }
-        return ResponseEntity.ok(GenericResponse.error(status));
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(GenericResponse.error(status));
     }
 }

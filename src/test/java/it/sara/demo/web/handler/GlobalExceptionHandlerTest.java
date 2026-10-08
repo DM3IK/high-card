@@ -35,6 +35,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -164,6 +165,42 @@ class GlobalExceptionHandlerTest {
                 Arguments.of(put(USER_URL).contentType(MediaType.TEXT_PLAIN).content("Mario"), 415,
                         "Media type not supported"),
                 Arguments.of(get("/user/v1/unknown"), 404, "Resource not found")
+        );
+    }
+
+    /**
+     * Regression: with an {@code Accept} header that excludes JSON, the PUT stored the user and only then failed
+     * to write the response; the handler could not write its JSON body either, so the client got HTTP 406 with an
+     * empty body and the server logged a 500. The search POST declares {@code produces} JSON as well, so it is
+     * covered too: without it, the search would answer with a generic 500 instead of 406.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("requestsAcceptingOnlyNonJson")
+    void acceptHeaderWithoutJson_returnsHttp200WithJsonBodyAndCode406WithoutCallingTheService(
+            String description, MockHttpServletRequestBuilder request, CapturedOutput output) throws Exception {
+        String body = mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status.code").value(406))
+                .andExpect(jsonPath("$.status.message").value("Media type not acceptable"))
+                .andReturn().getResponse().getContentAsString();
+
+        String traceId = JsonPath.read(body, "$.status.traceId");
+        assertTrue(logLineContaining(output, traceId).contains("WARN"));
+        verifyNoInteractions(userService);
+    }
+
+    static Stream<Arguments> requestsAcceptingOnlyNonJson() {
+        return Stream.of(
+                Arguments.of("PUT accepting " + MediaType.APPLICATION_XML_VALUE,
+                        put(USER_URL).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_XML)
+                                .content(VALID_BODY)),
+                Arguments.of("PUT accepting " + MediaType.TEXT_PLAIN_VALUE,
+                        put(USER_URL).contentType(MediaType.APPLICATION_JSON).accept(MediaType.TEXT_PLAIN)
+                                .content(VALID_BODY)),
+                Arguments.of("POST accepting " + MediaType.APPLICATION_XML_VALUE,
+                        post(USER_URL).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_XML)
+                                .content("{}"))
         );
     }
 

@@ -95,7 +95,7 @@ Every response, errors included, has HTTP status 200. The real outcome is in `st
 | 400 | Invalid input (the message names the field) or malformed body |
 | 401 | Missing, malformed, badly signed, expired or wrong-issuer token |
 | 403 | Valid token without the required scope |
-| 404 / 405 / 415 | Unknown path, unsupported method, unsupported content type |
+| 404 / 405 / 406 / 415 | Unknown path, unsupported method, `Accept` header without JSON, unsupported content type |
 | 500 | Unexpected error; details are logged on the server, never returned |
 
 `status.traceId` identifies the request: an error with a given trace id can be found in the server log.
