@@ -1,9 +1,15 @@
 package it.sara.demo.service.user.validator;
 
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberType;
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -38,11 +44,19 @@ public class UserValidator {
     private static final Pattern PHONE_FORMAT = Pattern.compile("^\\+?\\d+([ -]\\d+)*$");
 
     /**
-     * Italian mobile numbers ({@code 3} plus 8 or 9 digits) or landline numbers ({@code 0} plus 5 to 10 digits).
-     * The second digit of a landline is never {@code 0}: Italian area codes do not start with {@code 00},
-     * which is the prefix for calling abroad.
+     * Google libphonenumber metadata, used to check that a number exists in the Italian numbering plan:
+     * valid mobile prefixes, area codes and lengths.
      */
-    private static final Pattern ITALIAN_NATIONAL_NUMBER = Pattern.compile("^(3\\d{8,9}|0[1-9]\\d{4,9})$");
+    private static final PhoneNumberUtil PHONE_NUMBER_UTIL = PhoneNumberUtil.getInstance();
+
+    private static final String ITALIAN_REGION = "IT";
+
+    /**
+     * Number types a user can be reached on. Service numbers that exist in the numbering plan
+     * (toll-free, premium rate, voicemail access) are rejected.
+     */
+    private static final Set<PhoneNumberType> ALLOWED_NUMBER_TYPES =
+            EnumSet.of(PhoneNumberType.FIXED_LINE, PhoneNumberType.MOBILE, PhoneNumberType.FIXED_LINE_OR_MOBILE);
 
     private static final String ITALIAN_PREFIX = "+39";
     private static final String ITALIAN_PREFIX_WITH_ZEROS = "0039";
@@ -92,7 +106,8 @@ public class UserValidator {
     /**
      * Removes leading and trailing spaces from an Italian phone number, validates it and converts it to the stored
      * format: {@code +39} followed by digits only. The international prefix ({@code +39} or {@code 0039}) is
-     * optional, and digit groups can be separated by single spaces or hyphens.
+     * optional, and digit groups can be separated by single spaces or hyphens. The number must be a landline or
+     * mobile number that exists in the Italian numbering plan.
      *
      * @param phoneNumber the phone number to check
      * @return the normalized number, or an empty optional if the number is not a valid Italian number
@@ -116,9 +131,20 @@ public class UserValidator {
         } else {
             nationalNumber = digits;
         }
-        if (!ITALIAN_NATIONAL_NUMBER.matcher(nationalNumber).matches()) {
+        String internationalNumber = ITALIAN_PREFIX + nationalNumber;
+        if (!isInItalianNumberingPlan(internationalNumber)) {
             return Optional.empty();
         }
-        return Optional.of(ITALIAN_PREFIX + nationalNumber);
+        return Optional.of(internationalNumber);
+    }
+
+    private static boolean isInItalianNumberingPlan(String internationalNumber) {
+        try {
+            PhoneNumber parsed = PHONE_NUMBER_UTIL.parse(internationalNumber, ITALIAN_REGION);
+            return PHONE_NUMBER_UTIL.isValidNumberForRegion(parsed, ITALIAN_REGION)
+                    && ALLOWED_NUMBER_TYPES.contains(PHONE_NUMBER_UTIL.getNumberType(parsed));
+        } catch (NumberParseException e) {
+            return false;
+        }
     }
 }

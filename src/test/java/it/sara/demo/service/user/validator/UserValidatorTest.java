@@ -167,7 +167,6 @@ class UserValidatorTest {
             "+39",
             "12345678",
             "33312345",
-            "33312345678",
             "01234",
             "012345678901",
             "+44 333 1234567",
@@ -191,6 +190,36 @@ class UserValidatorTest {
     @ParameterizedTest
     @ValueSource(strings = {"0044 2071 234", "00442071234", "+39 0012345678", "0039 001234", "001234"})
     void normalizePhoneNumber_withDoubleZeroAfterThePrefix_returnsEmpty(String phoneNumber) {
+        assertTrue(validator.normalizePhoneNumber(phoneNumber).isEmpty());
+    }
+
+    /**
+     * Regression: only the first digit and the overall length were checked, so numbers with a prefix that does
+     * not exist in the Italian numbering plan were accepted: mobile prefixes {@code 30x}, a 9-digit number on
+     * the {@code 31x} range (which only has 10-digit numbers), and landlines with a non-existent area code
+     * ({@code 013}, {@code 0162}, {@code 0177}).
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "3001234567",
+            "+39 300 123 4567",
+            "3051234567",
+            "312345678",
+            "0132345678",
+            "0162345678",
+            "+39 0177 123456"
+    })
+    void normalizePhoneNumber_withNonExistentItalianPrefix_returnsEmpty(String phoneNumber) {
+        assertTrue(validator.normalizePhoneNumber(phoneNumber).isEmpty());
+    }
+
+    /**
+     * Service numbers exist in the numbering plan but do not reach a person, so they are rejected:
+     * toll-free ({@code 800}), premium rate ({@code 899}) and voicemail access ({@code 33312345678}).
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"800123456", "+39 899 123456", "33312345678"})
+    void normalizePhoneNumber_withServiceNumber_returnsEmpty(String phoneNumber) {
         assertTrue(validator.normalizePhoneNumber(phoneNumber).isEmpty());
     }
 
